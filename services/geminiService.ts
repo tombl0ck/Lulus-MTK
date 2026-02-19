@@ -21,6 +21,10 @@ export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQues
       body: JSON.stringify({ prompt: prompt })
     });
 
+    if (!response.ok) {
+      throw new Error(`Koneksi bermasalah (Error ${response.status})`);
+    }
+
     const data = await response.json();
     
     if (data.error) {
@@ -48,8 +52,6 @@ export const createTutorChat = () => {
   let history: { role: string, text: string }[] = [];
 
   return {
-    // KITA UBAH NAMA FUNGSINYA MENJADI sendMessageStream 
-    // Menggunakan teknik 'async function*' agar frontend mengira ini adalah efek ngetik (stream)
     sendMessageStream: async function* (message: string) {
       try {
         const response = await fetch('/.netlify/functions/tanyaPakBudi', {
@@ -62,6 +64,16 @@ export const createTutorChat = () => {
           })
         });
 
+        // --- PEREDAM KEJUT BARU ---
+        // Jika Netlify memutus sambungan (bukan status 200 OK)
+        if (!response.ok) {
+          if (response.status === 504) {
+            throw new Error("Waduh, Pak Budi mikirnya agak kelamaan dan diputus oleh server (Timeout 504). Coba klik kirim lagi ya, mesinnya sudah panas kok!");
+          }
+          throw new Error(`Oops, ada masalah jaringan (Error ${response.status})`);
+        }
+        // --------------------------
+
         const data = await response.json();
 
         if (data.error) {
@@ -72,12 +84,11 @@ export const createTutorChat = () => {
         history.push({ role: 'user', text: message });
         history.push({ role: 'model', text: data.text });
 
-        // Perintah 'yield' dipakai untuk mengirim data ala streaming
         yield { text: data.text };
 
       } catch (error: any) {
         console.error("Error chat:", error);
-        yield { text: "Ups, gagal terhubung! Pesan error: " + error.message };
+        yield { text: error.message };
       }
     }
   } as any;
