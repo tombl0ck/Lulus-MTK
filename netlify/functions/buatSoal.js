@@ -4,13 +4,13 @@ exports.handler = async function(event, context) {
     return { statusCode: 405, body: 'Metode tidak diizinkan' };
   }
 
-  // Mengambil kunci rahasia dari brankas Netlify (Langkah 2)
+  // Mengambil kunci rahasia dari brankas Netlify
   const apiKey = process.env.GEMINI_API_KEY;
   const pesananDariUser = JSON.parse(event.body).prompt;
 
   try {
-    // Koki (Backend) menghubungi Google API secara sembunyi-sembunyi
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    // Koki baru (gemini-1.5-flash) menghubungi Google API secara sembunyi-sembunyi
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
