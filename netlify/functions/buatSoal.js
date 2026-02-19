@@ -9,8 +9,8 @@ exports.handler = async function(event, context) {
   const pesananDariUser = JSON.parse(event.body).prompt;
 
   try {
-    // Koki baru (gemini-1.5-flash) menghubungi Google API secara sembunyi-sembunyi
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Koki yang benar dan aktif: gemini-3-flash-preview
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -20,7 +20,6 @@ exports.handler = async function(event, context) {
 
     const data = await response.json();
     
-    // Memberikan hasil masakan (jawaban AI) ke frontend
     return {
       statusCode: 200,
       body: JSON.stringify(data)
