@@ -1,4 +1,5 @@
 import { QuizQuestion } from '../types';
+import { SYSTEM_INSTRUCTION_CHAT } from '../constants';
 
 export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQuestion> => {
   try {
@@ -22,17 +23,11 @@ export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQues
 
     const data = await response.json();
     
-    // --- CCTV BARU UNTUK MENANGKAP ERROR GOOGLE ---
     if (data.error) {
        console.error("ALASAN DARI GOOGLE:", data.error);
-       alert("PESAN DARI GOOGLE: " + data.error.message); // Ini akan memunculkan pop-up di layar!
-       throw new Error(data.error.message);
+       throw new Error(data.error.message || data.error);
     }
-    if (!data.candidates) {
-       console.error("BALASAN KOSONG:", data);
-       throw new Error("Format jawaban dari Google tidak dikenali");
-    }
-    // -----------------------------------------------
+    if (!data.candidates) throw new Error("Format jawaban dari Google tidak dikenali");
 
     let textResponse = data.candidates[0].content.parts[0].text;
     textResponse = textResponse.replace(/```json/gi, '').replace(/```/gi, '').trim();
@@ -49,13 +44,41 @@ export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQues
   }
 };
 
-// Fitur Chat ("Tanya Pak Budi") mode istirahat
 export const createTutorChat = () => {
+  let history: { role: string, text: string }[] = [];
+
   return {
-    sendMessage: async (message: string) => {
-      return {
-        text: "Halo! Maaf ya, fitur 'Tanya Pak Budi' sedang dalam perbaikan karena kita baru saja pindah ke server baru yang lebih aman. Silakan coba latihan soalnya dulu ya! 🚀"
-      };
+    // KITA UBAH NAMA FUNGSINYA MENJADI sendMessageStream 
+    // Menggunakan teknik 'async function*' agar frontend mengira ini adalah efek ngetik (stream)
+    sendMessageStream: async function* (message: string) {
+      try {
+        const response = await fetch('/.netlify/functions/tanyaPakBudi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            history: history, 
+            message: message,
+            systemInstruction: SYSTEM_INSTRUCTION_CHAT 
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+           alert("PESAN DARI GOOGLE: " + data.error);
+           throw new Error(data.error);
+        }
+
+        history.push({ role: 'user', text: message });
+        history.push({ role: 'model', text: data.text });
+
+        // Perintah 'yield' dipakai untuk mengirim data ala streaming
+        yield { text: data.text };
+
+      } catch (error: any) {
+        console.error("Error chat:", error);
+        yield { text: "Ups, gagal terhubung! Pesan error: " + error.message };
+      }
     }
   } as any;
 };
