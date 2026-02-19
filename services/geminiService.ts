@@ -2,7 +2,6 @@ import { QuizQuestion } from '../types';
 
 export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQuestion> => {
   try {
-    // Kita buat pesanan yang sangat spesifik agar AI di Dapur merespons dengan format yang benar
     const prompt = `Buatlah 1 soal matematika pilihan ganda tentang "${topicTitle}". 
     Pastikan angkanya tidak terlalu rumit agar bisa dikerjakan dalam 2-3 menit.
     Berikan penjelasan langkah demi langkah yang sangat jelas di bagian 'explanation'.
@@ -15,7 +14,6 @@ export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQues
       "explanation": "penjelasan jawaban"
     }`;
 
-    // Mengirim pesanan ke Dapur Netlify kita
     const response = await fetch('/.netlify/functions/buatSoal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,16 +22,24 @@ export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQues
 
     const data = await response.json();
     
-    // Mengambil teks balasan dari Dapur
+    // --- CCTV BARU UNTUK MENANGKAP ERROR GOOGLE ---
+    if (data.error) {
+       console.error("ALASAN DARI GOOGLE:", data.error);
+       alert("PESAN DARI GOOGLE: " + data.error.message); // Ini akan memunculkan pop-up di layar!
+       throw new Error(data.error.message);
+    }
+    if (!data.candidates) {
+       console.error("BALASAN KOSONG:", data);
+       throw new Error("Format jawaban dari Google tidak dikenali");
+    }
+    // -----------------------------------------------
+
     let textResponse = data.candidates[0].content.parts[0].text;
-    
-    // Membersihkan format tambahan (seperti ```json ) jika kebetulan AI menambahkannya
     textResponse = textResponse.replace(/```json/gi, '').replace(/```/gi, '').trim();
 
     return JSON.parse(textResponse) as QuizQuestion;
   } catch (error) {
     console.error("Error generating quiz:", error);
-    // Jika Dapur sedang error, tampilkan soal darurat ini agar web tidak nge-blank
     return {
       question: "Wah, Dapur sedang sibuk menyiapkan soal. Sebagai pemanasan, berapa hasil dari 12 x 12?",
       options: ["122", "144", "124", "142"],
@@ -43,8 +49,7 @@ export const generateQuizQuestion = async (topicTitle: string): Promise<QuizQues
   }
 };
 
-// Fitur Chat ("Tanya Pak Budi") untuk sementara kita buat mode "istirahat"
-// Karena fitur chat butuh Dapur khusus yang bisa mengingat riwayat obrolan panjang
+// Fitur Chat ("Tanya Pak Budi") mode istirahat
 export const createTutorChat = () => {
   return {
     sendMessage: async (message: string) => {
