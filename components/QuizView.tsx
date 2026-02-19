@@ -6,10 +6,10 @@ import { CheckCircle2, XCircle, ArrowRight, RefreshCw, Trophy, Loader2, Home } f
 interface QuizViewProps {
   topic: Topic;
   onBack: () => void;
-  apiKey: string;
+  // apiKey dihapus dari sini karena sudah aman di Dapur Netlify
 }
 
-const QuizView: React.FC<QuizViewProps> = ({ topic, onBack, apiKey }) => {
+const QuizView: React.FC<QuizViewProps> = ({ topic, onBack }) => {
   const [state, setState] = useState<QuizState>({
     currentQuestion: null,
     isLoading: true,
@@ -29,7 +29,8 @@ const QuizView: React.FC<QuizViewProps> = ({ topic, onBack, apiKey }) => {
       currentQuestion: null
     }));
     
-    const q = await generateQuizQuestion(topic.title, apiKey);
+    // Memanggil kurir pembuat soal tanpa perlu membawa API Key lagi!
+    const q = await generateQuizQuestion(topic.title);
     
     setState(prev => ({ 
       ...prev, 
