@@ -1,57 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TOPICS } from './constants';
 import { Topic, AppView } from './types';
 import TopicCard from './components/TopicCard';
 import QuizView from './components/QuizView';
 import ChatTutor from './components/ChatTutor';
-import AccessModal from './components/AccessModal';
-import { GraduationCap, MessageCircle, Star, Key, Instagram, Coffee, Link } from 'lucide-react';
-
-// Helper to safely check process.env in browser without crashing
-const getEnvApiKey = () => {
-  try {
-    // @ts-ignore
-    return typeof process !== 'undefined' && process.env ? process.env.API_KEY : '';
-  } catch (e) {
-    return '';
-  }
-};
+import { GraduationCap, MessageCircle, Star, Instagram, Coffee, Link } from 'lucide-react';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.HOME);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [showChat, setShowChat] = useState(false);
-  
-  const [apiKey, setApiKey] = useState<string>('');
-  const [showAccessModal, setShowAccessModal] = useState(false);
-
-  useEffect(() => {
-    const envKey = getEnvApiKey();
-    const storedKey = localStorage.getItem('lulusmath_api_key');
-
-    if (envKey && envKey.length > 0) {
-      setApiKey(envKey);
-    } else if (storedKey) {
-      setApiKey(storedKey);
-    } else {
-      setShowAccessModal(true);
-    }
-  }, []);
-
-  const handleSaveKey = (key: string) => {
-    localStorage.setItem('lulusmath_api_key', key);
-    setApiKey(key);
-    setShowAccessModal(false);
-  };
-
-  const handleResetKey = () => {
-    if (confirm("Hapus API Key yang tersimpan? Anda harus memasukkannya lagi nanti.")) {
-      localStorage.removeItem('lulusmath_api_key');
-      setApiKey('');
-      setShowAccessModal(true);
-      setView(AppView.HOME);
-    }
-  };
 
   const handleTopicClick = (topic: Topic) => {
     setSelectedTopic(topic);
@@ -62,8 +20,6 @@ const App: React.FC = () => {
     setView(AppView.HOME);
     setSelectedTopic(null);
   };
-
-  const isUsingEnvKey = getEnvApiKey().length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -89,15 +45,6 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex gap-2">
-            {apiKey && !isUsingEnvKey && (
-              <button 
-                onClick={handleResetKey}
-                title="Ganti API Key"
-                className="flex items-center justify-center w-10 h-10 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-200 rounded-full transition-colors"
-              >
-                <Key size={18} />
-              </button>
-            )}
             <button 
               onClick={() => setShowChat(true)}
               className="flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-600 border border-blue-100 px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:shadow-md"
@@ -141,7 +88,7 @@ const App: React.FC = () => {
           )}
 
           {view === AppView.QUIZ && selectedTopic && (
-            <QuizView topic={selectedTopic} onBack={handleBackToHome} apiKey={apiKey} />
+            <QuizView topic={selectedTopic} onBack={handleBackToHome} />
           )}
         </main>
 
@@ -188,11 +135,8 @@ const App: React.FC = () => {
         </footer>
       </div>
 
-      {/* Access Modal (Show if no key) */}
-      {showAccessModal && <AccessModal onSave={handleSaveKey} />}
-
       {/* Chat Overlay */}
-      {showChat && <ChatTutor onClose={() => setShowChat(false)} apiKey={apiKey} />}
+      {showChat && <ChatTutor onClose={() => setShowChat(false)} />}
     </div>
   );
 };
